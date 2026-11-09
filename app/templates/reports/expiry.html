@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Expiry Monitoring Report{% endblock %}
+{% block header_title %}Inventory Expiry Monitoring & Spoilage Report{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="kpi-card kpi-navy">
+      <div>
+        <div class="kpi-info-label">Monitored Items</div>
+        <div class="kpi-info-value">{{ totals.total_monitored }}</div>
+        <div class="kpi-info-subtext">Products with expiry dates</div>
+      </div>
+      <div class="kpi-icon-badge"><i class="bi bi-calendar-check"></i></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="kpi-card kpi-amber">
+      <div>
+        <div class="kpi-info-label">Expiring Soon (<= 30 Days)</div>
+        <div class="kpi-info-value text-warning-emphasis">{{ totals.expiring_soon_count }}</div>
+        <div class="kpi-info-subtext">Require discounting or promotion</div>
+      </div>
+      <div class="kpi-icon-badge"><i class="bi bi-clock-history"></i></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="kpi-card kpi-terracotta">
+      <div>
+        <div class="kpi-info-label">Total Value at Risk</div>
+        <div class="kpi-info-value text-danger">{{ totals.total_value_at_risk | currency }}</div>
+        <div class="kpi-info-subtext">{{ totals.expired_count }} products already expired</div>
+      </div>
+      <div class="kpi-icon-badge"><i class="bi bi-shield-slash"></i></div>
+    </div>
+  </div>
+</div>
+
+<div class="card-retail">
+  <div class="card-retail-header">
+    <div class="d-flex align-items-center gap-2">
+      <h5>Expiry Status Schedule</h5>
+      <span class="badge badge-soft-navy">{{ rows|length }} products</span>
+    </div>
+    <a href="{{ url_for('reports.expiry', export='csv') }}" class="btn btn-sm btn-terracotta">
+      <i class="bi bi-download me-1"></i> Export Expiry CSV
+    </a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-retail align-middle">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Product Name</th>
+          <th>Category</th>
+          <th class="text-center">Stock</th>
+          <th class="text-end">Retail Price</th>
+          <th class="text-end">Value at Risk</th>
+          <th>Expiry Date</th>
+          <th>Status</th>
+          <th>Days Remaining</th>
+          <th>Supplier</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td><span class="font-monospace small text-muted">{{ r.sku }}</span></td>
+          <td><span class="fw-semibold text-dark">{{ r.name }}</span></td>
+          <td><span class="badge badge-soft-navy">{{ r.category }}</span></td>
+          <td class="text-center fw-bold">{{ r.quantity }}</td>
+          <td class="text-end font-monospace">{{ r.selling_price | currency }}</td>
+          <td class="text-end font-monospace fw-bold {% if r.status in ('Expired', 'Expiring Soon') %}text-danger{% else %}text-muted{% endif %}">
+            {{ r.value_at_risk | currency }}
+          </td>
+          <td class="font-monospace">{{ r.expiry_date }}</td>
+          <td><span class="badge {{ r.status_badge }}">{{ r.status }}</span></td>
+          <td class="font-monospace small">
+            {% if r.days_remaining < 0 %}
+              <span class="text-danger fw-bold">{{ r.days_remaining|abs }} days past</span>
+            {% elif r.days_remaining == 0 %}
+              <span class="text-danger fw-bold">Today</span>
+            {% else %}
+              {{ r.days_remaining }} days
+            {% endif %}
+          </td>
+          <td class="small text-muted">{{ r.supplier_name or 'Unassigned' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" class="text-center py-5 text-muted">No products with expiry dates recorded.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

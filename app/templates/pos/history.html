@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Sales History{% endblock %}
+{% block header_title %}Transactions & Sales History{% endblock %}
+
+{% block content %}
+<div class="card-retail mb-4">
+  <div class="card-retail-body py-3">
+    <form method="GET" action="{{ url_for('pos.history') }}" class="row g-2 align-items-center">
+      <div class="col-md-4">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" name="search" class="form-control" placeholder="Search invoice #, customer name or phone..." value="{{ search or '' }}">
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="d-flex align-items-center gap-1">
+          <span class="text-muted small">From:</span>
+          <input type="date" name="start_date" value="{{ start_date or '' }}" class="form-control form-control-sm">
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="d-flex align-items-center gap-1">
+          <span class="text-muted small">To:</span>
+          <input type="date" name="end_date" value="{{ end_date or '' }}" class="form-control form-control-sm">
+        </div>
+      </div>
+
+      <div class="col-md-2 text-end d-flex gap-2 justify-content-end">
+        <button type="submit" class="btn btn-sm btn-navy">Filter</button>
+        {% if search or start_date or end_date %}
+          <a href="{{ url_for('pos.history') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card-retail">
+  <div class="card-retail-header">
+    <div class="d-flex align-items-center gap-2">
+      <h5>Sales Invoices</h5>
+      <span class="badge badge-soft-navy">{{ sales|length }} records</span>
+    </div>
+    {% if session.get('user_role') == 'ADMIN' %}
+    <a href="{{ url_for('reports.sales_history', export='csv') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-download me-1"></i> Export History CSV
+    </a>
+    {% endif %}
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-retail align-middle">
+      <thead>
+        <tr>
+          <th>Invoice #</th>
+          <th>Date & Time</th>
+          <th>Cashier</th>
+          <th>Customer</th>
+          <th class="text-center">Items</th>
+          <th class="text-end">Subtotal</th>
+          <th class="text-end">Tax</th>
+          <th class="text-end">Payable</th>
+          <th>Payment</th>
+          <th class="text-end">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sales %}
+        <tr>
+          <td>
+            <a href="{{ url_for('pos.view_invoice', invoice_no=s.invoice_no) }}" class="fw-bold text-dark font-monospace text-decoration-none">
+              {{ s.invoice_no }}
+            </a>
+          </td>
+          <td class="small text-muted font-monospace">{{ s.created_at | datetime_format }}</td>
+          <td><span class="small text-muted">{{ s.cashier_name }}</span></td>
+          <td>
+            <div class="fw-semibold text-dark">{{ s.customer_name }}</div>
+            {% if s.customer_phone %}
+              <div class="small text-muted">{{ s.customer_phone }}</div>
+            {% endif %}
+          </td>
+          <td class="text-center"><span class="badge badge-soft-navy">{{ s.item_count }} items</span></td>
+          <td class="text-end font-monospace">{{ s.subtotal | currency }}</td>
+          <td class="text-end font-monospace small text-muted">{{ s.tax_amount | currency }}</td>
+          <td class="text-end font-monospace fw-bold text-dark">{{ s.final_total | currency }}</td>
+          <td>
+            <span class="badge {% if s.payment_method == 'CASH' %}badge-soft-sage{% elif s.payment_method == 'CARD' %}badge-soft-navy{% else %}badge-soft-terracotta{% endif %}">
+              {{ s.payment_method }}
+            </span>
+          </td>
+          <td class="text-end">
+            <a href="{{ url_for('pos.view_invoice', invoice_no=s.invoice_no) }}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Print Invoice">
+              <i class="bi bi-printer me-1"></i> Receipt
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" class="text-center py-5 text-muted">
+            <i class="bi bi-receipt display-6 d-block mb-2"></i>
+            No sales records found for the selected period.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

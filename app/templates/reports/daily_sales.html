@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Sales Report{% endblock %}
+{% block header_title %}Daily Sales & Financial Report{% endblock %}
+
+{% block content %}
+<div class="card-retail mb-4">
+  <div class="card-retail-body py-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <form method="GET" action="{{ url_for('reports.daily_sales') }}" class="d-flex align-items-center gap-2">
+        <label class="text-muted small fw-semibold">From:</label>
+        <input type="date" name="start_date" value="{{ start_date or '' }}" class="form-control form-control-sm" style="width: 140px;">
+        <label class="text-muted small">To:</label>
+        <input type="date" name="end_date" value="{{ end_date or '' }}" class="form-control form-control-sm" style="width: 140px;">
+        <button type="submit" class="btn btn-sm btn-navy">Filter</button>
+        {% if start_date or end_date %}
+          <a href="{{ url_for('reports.daily_sales') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+        {% endif %}
+      </form>
+
+      <a href="{{ url_for('reports.daily_sales', export='csv', start_date=start_date, end_date=end_date) }}" class="btn btn-sm btn-terracotta">
+        <i class="bi bi-download me-1"></i> Export CSV
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="card-retail">
+  <div class="card-retail-header">
+    <h5>Daily Revenue Breakdown</h5>
+    <span class="badge badge-soft-navy">{{ rows|length }} days recorded</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-retail align-middle">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th class="text-center">Transactions</th>
+          <th class="text-end">Gross Sales</th>
+          <th class="text-end">Discounts</th>
+          <th class="text-end">Tax</th>
+          <th class="text-end">Net Revenue</th>
+          <th class="text-end">Cash</th>
+          <th class="text-end">Card</th>
+          <th class="text-end">UPI</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td class="font-monospace fw-semibold">{{ r.sale_date }}</td>
+          <td class="text-center">{{ r.transaction_count }}</td>
+          <td class="text-end font-monospace">{{ r.gross_sales | currency }}</td>
+          <td class="text-end font-monospace text-danger">-{{ r.total_discount | currency }}</td>
+          <td class="text-end font-monospace text-muted">{{ r.total_tax | currency }}</td>
+          <td class="text-end font-monospace fw-bold text-dark">{{ r.net_revenue | currency }}</td>
+          <td class="text-end font-monospace small">{{ r.cash_revenue | currency }}</td>
+          <td class="text-end font-monospace small">{{ r.card_revenue | currency }}</td>
+          <td class="text-end font-monospace small">{{ r.upi_revenue | currency }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="9" class="text-center py-5 text-muted">No sales records found for the chosen date range.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      {% if rows %}
+      <tfoot class="border-top-2 border-dark table-light fw-bold font-monospace">
+        <tr>
+          <td>TOTALS:</td>
+          <td class="text-center">{{ totals.transaction_count }}</td>
+          <td class="text-end">{{ totals.gross_sales | currency }}</td>
+          <td class="text-end text-danger">-{{ totals.total_discount | currency }}</td>
+          <td class="text-end text-muted">{{ totals.total_tax | currency }}</td>
+          <td class="text-end text-success">{{ totals.net_revenue | currency }}</td>
+          <td class="text-end">{{ totals.cash_revenue | currency }}</td>
+          <td class="text-end">{{ totals.card_revenue | currency }}</td>
+          <td class="text-end">{{ totals.upi_revenue | currency }}</td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+{% endblock %}

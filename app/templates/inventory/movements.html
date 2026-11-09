@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Audit Trail{% endblock %}
+{% block header_title %}Stock Movement Audit Trail{% endblock %}
+
+{% block content %}
+<div class="card-retail mb-4">
+  <div class="card-retail-body py-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <form method="GET" action="{{ url_for('inventory.movements') }}" class="d-flex align-items-center gap-2">
+        <label class="text-muted small fw-semibold text-uppercase">Filter Type:</label>
+        <select name="type" class="form-select form-select-sm" onchange="this.form.submit()" style="width: 200px;">
+          <option value="All">All Movement Types</option>
+          <option value="SALE" {% if selected_type == 'SALE' %}selected{% endif %}>Sales (POS)</option>
+          <option value="PURCHASE_RECEIPT" {% if selected_type == 'PURCHASE_RECEIPT' %}selected{% endif %}>Purchase Receipts</option>
+          <option value="STOCK_ADJUSTMENT" {% if selected_type == 'STOCK_ADJUSTMENT' %}selected{% endif %}>Stock Adjustments</option>
+          <option value="DAMAGE" {% if selected_type == 'DAMAGE' %}selected{% endif %}>Damaged Stock</option>
+          <option value="EXPIRY" {% if selected_type == 'EXPIRY' %}selected{% endif %}>Expiry Write-offs</option>
+          <option value="RETURN" {% if selected_type == 'RETURN' %}selected{% endif %}>Returns</option>
+          <option value="INITIAL" {% if selected_type == 'INITIAL' %}selected{% endif %}>Initial Batch</option>
+        </select>
+        {% if selected_type != 'All' %}
+          <a href="{{ url_for('inventory.movements') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+        {% endif %}
+      </form>
+
+      <span class="text-muted small">Showing last {{ movements|length }} logged transactions</span>
+    </div>
+  </div>
+</div>
+
+<div class="card-retail">
+  <div class="card-retail-header">
+    <h5>Inventory Audit Trail</h5>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-retail align-middle">
+      <thead>
+        <tr>
+          <th>Date & Time</th>
+          <th>Product / SKU</th>
+          <th>Movement Type</th>
+          <th class="text-center">Prev Qty</th>
+          <th class="text-center">Change</th>
+          <th class="text-center">New Qty</th>
+          <th>Ref / Reason</th>
+          <th>Staff User</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in movements %}
+        <tr>
+          <td class="small text-muted font-monospace">{{ m.created_at | datetime_format }}</td>
+          <td>
+            <div class="fw-semibold text-dark">{{ m.product_name }}</div>
+            <div class="font-monospace small text-muted">{{ m.product_sku }}</div>
+          </td>
+          <td>
+            <span class="badge {% if m.movement_type == 'SALE' %}badge-soft-navy{% elif m.movement_type == 'PURCHASE_RECEIPT' %}badge-soft-success{% elif m.movement_type in ('DAMAGE', 'EXPIRY') %}badge-soft-danger{% else %}badge-soft-warning{% endif %}">
+              {{ m.movement_type }}
+            </span>
+          </td>
+          <td class="text-center">{{ m.previous_quantity }}</td>
+          <td class="text-center">
+            <span class="fw-bold {% if m.quantity_change > 0 %}text-success{% else %}text-danger{% endif %}">
+              {% if m.quantity_change > 0 %}+{% endif %}{{ m.quantity_change }}
+            </span>
+          </td>
+          <td class="text-center fw-semibold">{{ m.new_quantity }}</td>
+          <td>
+            <div class="small fw-semibold text-dark">{{ m.reference_id or '-' }}</div>
+            <div class="small text-muted text-truncate" style="max-width: 250px;">{{ m.reason or '' }}</div>
+          </td>
+          <td class="small text-muted">{{ m.user_name or 'System' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center py-4 text-muted">No stock movement logs found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

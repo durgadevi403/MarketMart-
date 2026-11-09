@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Point of Sale (POS){% endblock %}
+{% block header_title %}Point of Sale (POS) Terminal{% endblock %}
+
+{% block content %}
+<div id="pos-alert-container"></div>
+
+<div class="pos-container">
+  <!-- Left Panel: Product Catalog & Fast Search -->
+  <div class="pos-catalog-panel">
+    <!-- Search & Fast Barcode Scan -->
+    <div class="p-3 border-bottom bg-white">
+      <div class="input-group">
+        <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-upc-scan fs-5"></i></span>
+        <input type="text" id="pos-search-input" class="form-control border-start-0 py-2 fs-6"
+               placeholder="Scan barcode or type product name / SKU (Press Enter to add)..." autofocus>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="d-flex gap-1 overflow-auto mt-2 pb-1" style="white-space: nowrap;">
+        <button class="btn btn-sm btn-outline-secondary pos-cat-tab active" data-category="All">All Items</button>
+        {% for cat in categories %}
+          <button class="btn btn-sm btn-outline-secondary pos-cat-tab" data-category="{{ cat }}">{{ cat }}</button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Scrollable Product Grid -->
+    <div id="pos-product-grid" class="pos-product-grid">
+      <!-- Injected via pos.js -->
+    </div>
+  </div>
+
+  <!-- Right Panel: Shopping Cart & Checkout -->
+  <div class="pos-cart-panel">
+    <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <h5 class="mb-0 fw-bold" style="color: var(--sidebar-navy);">Current Cart</h5>
+        <span id="pos-cart-count" class="badge badge-soft-terracotta">0</span>
+      </div>
+      <button id="pos-clear-cart-btn" class="btn btn-sm btn-outline-danger py-0 px-2" title="Clear Cart">
+        <i class="bi bi-trash3 me-1"></i> Clear
+      </button>
+    </div>
+
+    <!-- Customer Information Collapse/Bar -->
+    <div class="p-2.5 px-3 bg-light border-bottom">
+      <div class="row g-2">
+        <div class="col-7">
+          <input type="text" id="pos-customer-name" class="form-control form-control-sm" placeholder="Customer Name" value="Walk-in Customer">
+        </div>
+        <div class="col-5">
+          <input type="tel" id="pos-customer-phone" class="form-control form-control-sm" placeholder="Phone (Optional)">
+        </div>
+      </div>
+    </div>
+
+    <!-- Cart Items Container (expands naturally without internal scrolling) -->
+    <div class="pos-cart-scroll-area">
+      <div id="pos-cart-empty" class="text-center py-4 text-muted">
+        <i class="bi bi-cart3 display-6 d-block mb-2 text-muted"></i>
+        <p class="mb-0 small">Cart is empty.<br>Scan an item or select a product to begin.</p>
+      </div>
+      <div id="pos-cart-items" style="display: none;">
+        <!-- Injected via pos.js -->
+      </div>
+    </div>
+
+    <!-- Pricing Calculations & Payment Section -->
+    <div class="pos-checkout-section">
+      <!-- Discount Line -->
+      <div class="row g-2 mb-2 align-items-center">
+        <div class="col-4">
+          <select id="pos-discount-type" class="form-select form-select-sm">
+            <option value="NONE">No Discount</option>
+            <option value="PERCENTAGE">Discount %</option>
+            <option value="FIXED">Flat $ Off</option>
+          </select>
+        </div>
+        <div class="col-4">
+          <input type="number" id="pos-discount-value" min="0" step="0.5" class="form-control form-control-sm text-end" placeholder="0">
+        </div>
+        <div class="col-4 text-end">
+          <span id="pos-discount-amount" class="small fw-semibold text-danger">-$0.00</span>
+        </div>
+      </div>
+
+      <!-- Financial Totals Summary -->
+      <div class="border-top pt-2">
+        <div class="d-flex justify-content-between text-muted small mb-1">
+          <span>Subtotal</span>
+          <span id="pos-subtotal" class="fw-semibold text-dark">$0.00</span>
+        </div>
+        <div class="d-flex justify-content-between text-muted small mb-2">
+          <span>Sales Tax ({{ default_tax_rate }}%)</span>
+          <span id="pos-tax-amount" class="fw-semibold text-dark">$0.00</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-baseline mb-2 pb-1 border-bottom">
+          <span class="fs-6 fw-bold text-dark">Payable Total</span>
+          <span id="pos-final-total" class="fs-4 fw-bolder font-monospace" style="color: var(--accent-terracotta);">$0.00</span>
+        </div>
+      </div>
+
+      <!-- Payment Method Selection -->
+      <div class="mb-2">
+        <label class="small fw-semibold text-muted text-uppercase mb-1" style="font-size: 0.72rem;">Payment Method</label>
+        <div class="btn-group w-100" role="group">
+          <input type="radio" class="btn-check" name="payment_method" id="pay_cash" value="CASH" checked>
+          <label class="btn btn-sm btn-outline-secondary" for="pay_cash"><i class="bi bi-cash me-1"></i> Cash</label>
+
+          <input type="radio" class="btn-check" name="payment_method" id="pay_card" value="CARD">
+          <label class="btn btn-sm btn-outline-secondary" for="pay_card"><i class="bi bi-credit-card me-1"></i> Card</label>
+
+          <input type="radio" class="btn-check" name="payment_method" id="pay_upi" value="UPI">
+          <label class="btn btn-sm btn-outline-secondary" for="pay_upi"><i class="bi bi-qr-code me-1"></i> UPI</label>
+        </div>
+      </div>
+
+      <!-- Cash Tendered Details -->
+      <div id="pos-cash-section" class="bg-light p-2 rounded border mb-2">
+        <div class="row g-2 align-items-center mb-1">
+          <div class="col-6">
+            <label class="small text-muted fw-semibold" style="font-size: 0.75rem;">Amount Tendered</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text">$</span>
+              <input type="number" step="0.5" id="pos-amount-tendered" class="form-control font-monospace fw-bold" placeholder="0.00">
+            </div>
+          </div>
+          <div class="col-6 text-end">
+            <div class="small text-muted fw-semibold" style="font-size: 0.75rem;">Change Due</div>
+            <div id="pos-change-due" class="fs-6 fw-bold text-success">$0.00</div>
+          </div>
+        </div>
+        <div class="d-flex gap-1 justify-content-end mt-1">
+          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1.5 quick-cash-btn" data-value="exact">Exact</button>
+          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1.5 quick-cash-btn" data-value="10">$10</button>
+          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1.5 quick-cash-btn" data-value="20">$20</button>
+          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1.5 quick-cash-btn" data-value="50">$50</button>
+          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1.5 quick-cash-btn" data-value="100">$100</button>
+        </div>
+      </div>
+
+      <!-- UPI Reference / QR code helper -->
+      <div id="pos-upi-section" class="bg-light p-2 rounded border mb-2 text-center" style="display: none;">
+        <div class="small text-muted mb-1"><i class="bi bi-qr-code-scan me-1"></i> Customer Scans Store QR Code</div>
+        <span class="badge badge-soft-navy font-monospace">UPI ID: marketmate@upi</span>
+      </div>
+
+      <!-- Complete Sale / Generate Invoice Action Button -->
+      <button id="pos-checkout-btn" type="button" class="pos-checkout-btn shadow-sm">
+        <i class="bi bi-receipt-cutoff fs-5"></i>
+        <span id="pos-checkout-btn-text">Complete Sale & Generate Invoice</span>
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pos.js') }}"></script>
+<script>
+  let posApp;
+  document.addEventListener('DOMContentLoaded', function () {
+    const rawProducts = [
+      {% for p in products %}
+      {
+        id: {{ p.id }},
+        name: {{ p.name | tojson }},
+        sku: {{ p.sku | tojson }},
+        category: {{ p.category | tojson }},
+        selling_price: {{ p.selling_price }},
+        quantity: {{ p.quantity }},
+        min_stock_level: {{ p.min_stock_level }},
+        status: {{ p.status | tojson }},
+        label: {{ p.label | tojson }},
+        badge_class: {{ p.badge_class | tojson }}
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+
+    posApp = new POSManager({
+      products: rawProducts,
+      taxRate: {{ default_tax_rate }},
+      currencySymbol: '{{ currency_symbol }}'
+    });
+  });
+</script>
+{% endblock %}

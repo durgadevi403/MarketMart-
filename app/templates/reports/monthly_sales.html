@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Monthly Sales Report{% endblock %}
+{% block header_title %}Monthly Sales & Turnover Report{% endblock %}
+
+{% block content %}
+<div class="card-retail mb-4">
+  <div class="card-retail-body py-3 d-flex justify-content-between align-items-center">
+    <div>
+      <h6 class="fw-bold mb-1" style="color: var(--sidebar-navy);">Monthly Aggregated Turnover</h6>
+      <p class="text-muted small mb-0">Track monthly sales growth and average spending trends.</p>
+    </div>
+    <a href="{{ url_for('reports.monthly_sales', export='csv') }}" class="btn btn-sm btn-terracotta">
+      <i class="bi bi-download me-1"></i> Export Monthly CSV
+    </a>
+  </div>
+</div>
+
+<div class="card-retail">
+  <div class="card-retail-header">
+    <h5>Monthly Revenue Performance</h5>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-retail align-middle">
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th class="text-center">Transactions</th>
+          <th class="text-end">Gross Sales</th>
+          <th class="text-end">Discounts Given</th>
+          <th class="text-end">Tax Collected</th>
+          <th class="text-end">Net Revenue</th>
+          <th class="text-end">Avg Order Value (AOV)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td class="font-monospace fw-bold">{{ r.month_year }}</td>
+          <td class="text-center">{{ r.transaction_count }}</td>
+          <td class="text-end font-monospace">{{ r.gross_sales | currency }}</td>
+          <td class="text-end font-monospace text-danger">-{{ r.total_discount | currency }}</td>
+          <td class="text-end font-monospace text-muted">{{ r.total_tax | currency }}</td>
+          <td class="text-end font-monospace fw-bold text-dark">{{ r.net_revenue | currency }}</td>
+          <td class="text-end font-monospace text-primary fw-semibold">{{ r.average_order_value | currency }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center py-5 text-muted">No monthly transaction data available.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      {% if rows %}
+      <tfoot class="border-top-2 border-dark table-light fw-bold font-monospace">
+        <tr>
+          <td>TOTALS:</td>
+          <td class="text-center">{{ totals.transaction_count }}</td>
+          <td class="text-end">{{ totals.gross_sales | currency }}</td>
+          <td class="text-end text-danger">-{{ totals.total_discount | currency }}</td>
+          <td class="text-end text-muted">{{ totals.total_tax | currency }}</td>
+          <td class="text-end text-success">{{ totals.net_revenue | currency }}</td>
+          <td class="text-end text-primary">{{ totals.average_order_value | currency }}</td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+{% endblock %}

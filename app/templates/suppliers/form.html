@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Supplier{% endblock %}
+{% block header_title %}{{ action }} Supplier Profile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card-retail">
+      <div class="card-retail-header">
+        <h5>{{ action }} Supplier</h5>
+        <a href="{{ url_for('suppliers.index') }}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i> Back to Suppliers
+        </a>
+      </div>
+      <div class="card-retail-body">
+        <form method="POST">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="name" class="form-label">Supplier / Company Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="name" name="name"
+                     value="{{ supplier.name or '' }}" placeholder="e.g. Sunrise Dairy Farms" required>
+            </div>
+            <div class="col-md-6">
+              <label for="contact_person" class="form-label">Contact Person</label>
+              <input type="text" class="form-control" id="contact_person" name="contact_person"
+                     value="{{ supplier.contact_person or '' }}" placeholder="e.g. Marcus Thornton">
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="phone" class="form-label">Phone Number</label>
+              <input type="tel" class="form-control" id="phone" name="phone"
+                     value="{{ supplier.phone or '' }}" placeholder="+1 (555) 000-0000">
+            </div>
+            <div class="col-md-6">
+              <label for="email" class="form-label">Email Address</label>
+              <input type="email" class="form-control" id="email" name="email"
+                     value="{{ supplier.email or '' }}" placeholder="orders@supplier.com">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="address" class="form-label">Physical Address</label>
+            <textarea class="form-control" id="address" name="address" rows="2"
+                      placeholder="Street address, city, state, postal code">{{ supplier.address or '' }}</textarea>
+          </div>
+
+          <div class="mb-4">
+            <label for="notes" class="form-label">Notes & Terms</label>
+            <textarea class="form-control" id="notes" name="notes" rows="2"
+                      placeholder="Delivery schedule, minimum order quantities, payment terms...">{{ supplier.notes or '' }}</textarea>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+            <a href="{{ url_for('suppliers.index') }}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-terracotta px-4">
+              <i class="bi bi-check2 me-1"></i> Save Supplier
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

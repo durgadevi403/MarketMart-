@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Suppliers Directory{% endblock %}
+{% block header_title %}Suppliers Directory{% endblock %}
+
+{% block content %}
+<div class="card-retail mb-4">
+  <div class="card-retail-body py-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <form method="GET" action="{{ url_for('suppliers.index') }}" class="d-flex align-items-center gap-2" style="max-width: 400px; flex: 1;">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" name="search" class="form-control" placeholder="Search by name, contact, phone, or email..." value="{{ search or '' }}">
+        </div>
+        <button type="submit" class="btn btn-sm btn-navy">Search</button>
+        {% if search %}
+          <a href="{{ url_for('suppliers.index') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+        {% endif %}
+      </form>
+
+      <a href="{{ url_for('suppliers.create') }}" class="btn btn-sm btn-terracotta d-inline-flex align-items-center gap-1">
+        <i class="bi bi-plus-lg"></i> Add Supplier
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="card-retail">
+  <div class="card-retail-header">
+    <div class="d-flex align-items-center gap-2">
+      <h5>Suppliers Directory</h5>
+      <span class="badge badge-soft-navy">{{ suppliers|length }} suppliers</span>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-retail align-middle">
+      <thead>
+        <tr>
+          <th>Supplier Name</th>
+          <th>Contact Person</th>
+          <th>Phone Number</th>
+          <th>Email Address</th>
+          <th>Address</th>
+          <th class="text-center">Products</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in suppliers %}
+        <tr>
+          <td>
+            <a href="{{ url_for('suppliers.detail', supplier_id=s.id) }}" class="fw-bold text-dark text-decoration-none">
+              {{ s.name }}
+            </a>
+          </td>
+          <td>{{ s.contact_person or '-' }}</td>
+          <td>{{ s.phone or '-' }}</td>
+          <td>
+            {% if s.email %}
+              <a href="mailto:{{ s.email }}" class="text-secondary small">{{ s.email }}</a>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td class="small text-muted" style="max-width: 220px;">{{ s.address or '-' }}</td>
+          <td class="text-center">
+            <span class="badge badge-soft-sage">{{ s.product_count }} items</span>
+          </td>
+          <td class="text-end">
+            <div class="d-inline-flex gap-1">
+              <a href="{{ url_for('suppliers.detail', supplier_id=s.id) }}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="View details">
+                <i class="bi bi-eye"></i>
+              </a>
+              <a href="{{ url_for('suppliers.edit', supplier_id=s.id) }}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Edit">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="POST" action="{{ url_for('suppliers.delete', supplier_id=s.id) }}" onsubmit="return confirm('Delete this supplier? Linked products will remain with supplier unassigned.');" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" title="Delete">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center py-5 text-muted">
+            <i class="bi bi-truck display-6 d-block mb-2"></i>
+            No suppliers registered yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

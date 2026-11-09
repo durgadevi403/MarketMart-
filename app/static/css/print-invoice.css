@@ -1,0 +1,117 @@
+/* Print Receipt / Invoice Stylesheet */
+.invoice-card {
+  max-width: 480px;
+  margin: 1.5rem auto;
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 2rem 2rem;
+  box-shadow: var(--shadow-md);
+  color: #17263C;
+}
+
+.invoice-header {
+  text-align: center;
+  border-bottom: 2px dashed #CBD5E1;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.invoice-store-title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #17263C;
+  margin-bottom: 0.25rem;
+}
+
+.invoice-meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: #64748B;
+  margin-bottom: 0.25rem;
+}
+
+.invoice-items-table {
+  width: 100%;
+  margin: 1.25rem 0;
+  border-collapse: collapse;
+}
+
+.invoice-items-table th {
+  border-bottom: 1px solid #17263C;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  padding: 0.45rem 0;
+  text-align: left;
+}
+
+.invoice-items-table td {
+  padding: 0.55rem 0;
+  border-bottom: 1px dashed #E2E8F0;
+  font-size: 0.84rem;
+}
+
+.invoice-summary-table {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.invoice-summary-table td {
+  padding: 0.35rem 0;
+  font-size: 0.85rem;
+}
+
+.invoice-total-row {
+  border-top: 2px solid #17263C;
+  border-bottom: 2px solid #17263C;
+  font-weight: 800;
+  font-size: 1.15rem;
+}
+
+.invoice-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px dashed #CBD5E1;
+  font-size: 0.78rem;
+  color: #64748B;
+}
+
+.barcode-placeholder {
+  display: inline-block;
+  letter-spacing: 5px;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding: 0.4rem 1rem;
+  background: #F1F5F9;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+}
+
+@media print {
+  body {
+    background: #FFFFFF !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  #sidebar, .top-navbar, .no-print, .btn, .alert {
+    display: none !important;
+  }
+  #main-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  .page-container {
+    padding: 0 !important;
+  }
+  .invoice-card {
+    border: none !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
+}

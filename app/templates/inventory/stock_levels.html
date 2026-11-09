@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory & Stock Control{% endblock %}
+{% block header_title %}Inventory Monitoring & Stock Control{% endblock %}
+
+{% block content %}
+<!-- Inventory Valuation & Status KPIs -->
+<div class="row g-3 mb-4">
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-navy">
+      <div>
+        <div class="kpi-info-label">Stock Units & Valuation</div>
+        <div class="kpi-info-value">{{ summary.total_units }} <span class="fs-6 fw-normal text-muted">units</span></div>
+        <div class="kpi-info-subtext">Retail: {{ summary.total_retail_valuation | currency }}</div>
+      </div>
+      <div class="kpi-icon-badge">
+        <i class="bi bi-boxes"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-sage">
+      <div>
+        <div class="kpi-info-label">Inventory Cost Investment</div>
+        <div class="kpi-info-value">{{ summary.total_cost_valuation | currency }}</div>
+        <div class="kpi-info-subtext">Across {{ summary.total_skus }} managed SKUs</div>
+      </div>
+      <div class="kpi-icon-badge">
+        <i class="bi bi-wallet2"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-amber">
+      <div>
+        <div class="kpi-info-label">Low Stock Alerts</div>
+        <div class="kpi-info-value text-warning-emphasis">{{ summary.low_stock_count }}</div>
+        <div class="kpi-info-subtext"><a href="{{ url_for('inventory.reorder') }}" class="text-decoration-none">View reorder list &rarr;</a></div>
+      </div>
+      <div class="kpi-icon-badge">
+        <i class="bi bi-arrow-down-circle"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6">
+    <div class="kpi-card kpi-terracotta">
+      <div>
+        <div class="kpi-info-label">Expiring Soon & Out of Stock</div>
+        <div class="kpi-info-value text-danger">{{ summary.out_of_stock_count }} <span class="fs-6 text-muted">out</span> / {{ summary.expiring_count }} <span class="fs-6 text-muted">exp</span></div>
+        <div class="kpi-info-subtext"><a href="{{ url_for('inventory.expiries') }}" class="text-decoration-none">Inspect expiry dates &rarr;</a></div>
+      </div>
+      <div class="kpi-icon-badge">
+        <i class="bi bi-hourglass-bottom"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter and Action Bar -->
+<div class="card-retail mb-4">
+  <div class="card-retail-body py-3">
+    <form method="GET" action="{{ url_for('inventory.index') }}" class="row g-2 align-items-center">
+      <div class="col-md-4">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" name="search" class="form-control" placeholder="Search product or SKU..." value="{{ search or '' }}">
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="All">All Categories</option>
+          {% for cat in categories %}
+            <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Stock Levels</option>
+          <option value="low_stock" {% if selected_status == 'low_stock' %}selected{% endif %}>Low Stock Only</option>
+          <option value="out_of_stock" {% if selected_status == 'out_of_stock' %}selected{% endif %}>Out of Stock Only</option>
+          <option value="in_stock" {% if selected_status == 'in_stock' %}selected{% endif %}>Adequate Stock Only</option>
+        </select>
+      </div>
+
+      <div class="col-md-3 text-end d-flex gap-2 justify-content-end">
+        <button type="submit" class="btn btn-sm btn-navy">Filter</button>
+        {% if search or selected_category != 'All' or selected_status %}
+          <a href="{{ url_for('inventory.index') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+        {% endif %}
+        <button type="button" class="btn btn-sm btn-terracotta d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#adjustmentModal">
+          <i class="bi bi-plus-slash-minus"></i> Stock Adjustment
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Stock Inventory Table -->
+<div class="card-retail">
+  <div class="card-retail-header">
+    <div class="d-flex align-items-center gap-2">
+      <h5>Stock Levels & Audit Status</h5>
+      <span class="badge badge-soft-navy">{{ products|length }} items</span>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-retail align-middle">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Product Name</th>
+          <th>Category</th>
+          <th class="text-center">Current Stock</th>
+          <th class="text-center">Min Threshold</th>
+          <th class="text-end">Cost Val.</th>
+          <th class="text-end">Retail Val.</th>
+          <th>Status</th>
+          <th class="text-end">Quick Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td><span class="font-monospace small text-muted">{{ p.sku }}</span></td>
+          <td><span class="fw-semibold text-dark">{{ p.name }}</span></td>
+          <td><span class="badge badge-soft-navy">{{ p.category }}</span></td>
+          <td class="text-center">
+            <span class="fs-6 fw-bold {% if p.quantity == 0 %}text-danger{% elif p.quantity <= p.min_stock_level %}text-warning-emphasis{% else %}text-success{% endif %}">
+              {{ p.quantity }}
+            </span>
+          </td>
+          <td class="text-center text-muted small">{{ p.min_stock_level }}</td>
+          <td class="text-end font-monospace">{{ (p.quantity * p.cost_price) | currency }}</td>
+          <td class="text-end font-monospace fw-bold">{{ (p.quantity * p.selling_price) | currency }}</td>
+          <td>
+            <span class="badge {{ p.badge_class }}">{{ p.label }}</span>
+          </td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-secondary py-1 px-2"
+                    onclick="openAdjustmentModal({{ p.id }}, '{{ p.name }}', {{ p.quantity }})"
+                    title="Log Stock Adjustment">
+              <i class="bi bi-sliders me-1"></i> Adjust
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="9" class="text-center py-5 text-muted">
+            No inventory records found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Stock Adjustment Modal -->
+<div class="modal fade" id="adjustmentModal" tabindex="-1" aria-labelledby="adjustmentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('inventory.adjust') }}">
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold" id="adjustmentModalLabel">Record Stock Adjustment</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="modal-product-select" class="form-label">Select Product <span class="text-danger">*</span></label>
+            <select name="product_id" id="modal-product-select" class="form-select" required>
+              <option value="">Choose product...</option>
+              {% for p in products %}
+                <option value="{{ p.id }}">{{ p.name }} (Current: {{ p.quantity }} units)</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="movement_type" class="form-label">Adjustment Reason / Type <span class="text-danger">*</span></label>
+            <select name="movement_type" id="movement_type" class="form-select" required>
+              <option value="PURCHASE_RECEIPT">Purchase Receipt (Restock delivery +)</option>
+              <option value="STOCK_ADJUSTMENT">Stock Adjustment (Audit correction +/-)</option>
+              <option value="DAMAGE">Damage / Broken Goods (-)</option>
+              <option value="EXPIRY">Expired Items Write-off (-)</option>
+              <option value="RETURN">Customer Return (+)</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="quantity_change" class="form-label">Quantity Change <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" id="quantity_change" name="quantity_change"
+                   placeholder="e.g. 20 (to add) or -5 (to deduct)" required>
+            <div class="form-text small">Enter positive integer to add stock, or negative integer with minus (-) to reduce stock.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="reason" class="form-label">Audit Notes & Reference</label>
+            <textarea class="form-control" id="reason" name="reason" rows="2"
+                      placeholder="e.g. Weekly vendor delivery PO-9801, or damaged in aisle 3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-top">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-terracotta">Commit Adjustment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openAdjustmentModal(productId, productName, currentStock) {
+    const select = document.getElementById('modal-product-select');
+    if (select) {
+      select.value = productId;
+    }
+    const modal = new bootstrap.Modal(document.getElementById('adjustmentModal'));
+    modal.show();
+  }
+</script>
+{% endblock %}

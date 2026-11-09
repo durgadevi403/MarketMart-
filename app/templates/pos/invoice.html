@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice #{{ sale.invoice_no }}{% endblock %}
+{% block header_title %}Receipt & Invoice #{{ sale.invoice_no }}{% endblock %}
+
+{% block content %}
+<div class="no-print d-flex justify-content-between align-items-center mb-4">
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('pos.index') }}" class="btn btn-navy">
+      <i class="bi bi-plus-lg me-1"></i> Start New Sale
+    </a>
+    <a href="{{ url_for('pos.history') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-clock-history me-1"></i> Sales History
+    </a>
+  </div>
+  <button onclick="window.print()" class="btn btn-terracotta shadow-sm">
+    <i class="bi bi-printer me-1"></i> Print Receipt / Invoice
+  </button>
+</div>
+
+<!-- Printable Invoice Card -->
+<div class="invoice-card">
+  <div class="invoice-header">
+    <div class="brand-icon mx-auto mb-2" style="width: 36px; height: 36px; font-size: 1.1rem;">
+      <i class="bi bi-shop"></i>
+    </div>
+    <div class="invoice-store-title">{{ store_name }}</div>
+    <div class="small text-muted">{{ store_address }}</div>
+    <div class="small text-muted">Tel: {{ store_phone }}</div>
+  </div>
+
+  <div class="invoice-meta-row">
+    <span><strong>Invoice No:</strong> {{ sale.invoice_no }}</span>
+    <span>{{ sale.created_at | datetime_format }}</span>
+  </div>
+  <div class="invoice-meta-row">
+    <span><strong>Cashier:</strong> {{ sale.cashier_name }}</span>
+    <span><strong>Customer:</strong> {{ sale.customer_name }}</span>
+  </div>
+  {% if sale.customer_phone %}
+  <div class="invoice-meta-row">
+    <span><strong>Phone:</strong> {{ sale.customer_phone }}</span>
+  </div>
+  {% endif %}
+
+  <!-- Line Items Table -->
+  <table class="invoice-items-table">
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th class="text-center">Qty</th>
+        <th class="text-end">Price</th>
+        <th class="text-end">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in sale['items'] %}
+      <tr>
+        <td>
+          <div class="fw-semibold">{{ item.product_name }}</div>
+          <div class="font-monospace text-muted" style="font-size: 0.72rem;">{{ item.product_sku }}</div>
+        </td>
+        <td class="text-center">{{ item.quantity }}</td>
+        <td class="text-end font-monospace">{{ item.unit_price | currency }}</td>
+        <td class="text-end font-monospace fw-semibold">{{ item.line_total | currency }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Calculation Summary -->
+  <table class="invoice-summary-table">
+    <tr>
+      <td class="text-muted">Subtotal:</td>
+      <td class="text-end font-monospace">{{ sale.subtotal | currency }}</td>
+    </tr>
+    {% if sale.discount_amount > 0 %}
+    <tr>
+      <td class="text-danger">Discount ({{ sale.discount_type }}):</td>
+      <td class="text-end text-danger font-monospace">-{{ sale.discount_amount | currency }}</td>
+    </tr>
+    {% endif %}
+    <tr>
+      <td class="text-muted">Sales Tax ({{ sale.tax_rate }}%):</td>
+      <td class="text-end font-monospace">{{ sale.tax_amount | currency }}</td>
+    </tr>
+    <tr class="invoice-total-row">
+      <td>TOTAL PAYABLE:</td>
+      <td class="text-end font-monospace">{{ sale.final_total | currency }}</td>
+    </tr>
+    <tr>
+      <td class="text-muted pt-2">Payment Method:</td>
+      <td class="text-end fw-semibold pt-2">{{ sale.payment_method }}</td>
+    </tr>
+    {% if sale.payment_method == 'CASH' %}
+    <tr>
+      <td class="text-muted">Amount Tendered:</td>
+      <td class="text-end font-monospace">{{ sale.amount_tendered | currency }}</td>
+    </tr>
+    <tr>
+      <td class="text-muted">Change Returned:</td>
+      <td class="text-end font-monospace fw-bold text-success">{{ sale.change_returned | currency }}</td>
+    </tr>
+    {% endif %}
+  </table>
+
+  <div class="invoice-footer">
+    <div class="fw-semibold">Thank you for shopping at MarketMate!</div>
+    <div>Please retain this receipt for returns within 7 days.</div>
+    <div class="barcode-placeholder">||| | | |||| | ||| | ||</div>
+    <div class="mt-1 font-monospace" style="font-size: 0.7rem;">{{ sale.invoice_no }}</div>
+  </div>
+</div>
+{% endblock %}

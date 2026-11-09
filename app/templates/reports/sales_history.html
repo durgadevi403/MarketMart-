@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Sales History Ledger{% endblock %}
+{% block header_title %}Complete Sales & Invoices Ledger{% endblock %}
+
+{% block content %}
+<div class="card-retail mb-4">
+  <div class="card-retail-body py-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <form method="GET" action="{{ url_for('reports.sales_history') }}" class="d-flex align-items-center gap-2">
+        <label class="text-muted small fw-semibold">From:</label>
+        <input type="date" name="start_date" value="{{ start_date or '' }}" class="form-control form-control-sm" style="width: 140px;">
+        <label class="text-muted small">To:</label>
+        <input type="date" name="end_date" value="{{ end_date or '' }}" class="form-control form-control-sm" style="width: 140px;">
+        <button type="submit" class="btn btn-sm btn-navy">Filter</button>
+        {% if start_date or end_date %}
+          <a href="{{ url_for('reports.sales_history') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+        {% endif %}
+      </form>
+
+      <a href="{{ url_for('reports.sales_history', export='csv', start_date=start_date, end_date=end_date) }}" class="btn btn-sm btn-terracotta">
+        <i class="bi bi-download me-1"></i> Export Sales CSV
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="card-retail">
+  <div class="card-retail-header">
+    <h5>Invoices Audit Ledger</h5>
+    <span class="badge badge-soft-navy">{{ rows|length }} invoices</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-retail align-middle">
+      <thead>
+        <tr>
+          <th>Invoice #</th>
+          <th>Date & Time</th>
+          <th>Cashier</th>
+          <th>Customer</th>
+          <th class="text-center">Items</th>
+          <th class="text-end">Subtotal</th>
+          <th class="text-end">Discount</th>
+          <th class="text-end">Tax</th>
+          <th class="text-end">Final Total</th>
+          <th>Payment</th>
+          <th class="text-end">Receipt</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>
+            <a href="{{ url_for('pos.view_invoice', invoice_no=r.invoice_no) }}" class="font-monospace fw-bold text-dark text-decoration-none">
+              {{ r.invoice_no }}
+            </a>
+          </td>
+          <td class="font-monospace small text-muted">{{ r.created_at | datetime_format }}</td>
+          <td><span class="small">{{ r.cashier_name }}</span></td>
+          <td>{{ r.customer_name }}</td>
+          <td class="text-center">{{ r.items_count }}</td>
+          <td class="text-end font-monospace">{{ r.subtotal | currency }}</td>
+          <td class="text-end font-monospace text-danger">-{{ r.discount_amount | currency }}</td>
+          <td class="text-end font-monospace text-muted">{{ r.tax_amount | currency }}</td>
+          <td class="text-end font-monospace fw-bold text-dark">{{ r.final_total | currency }}</td>
+          <td>
+            <span class="badge {% if r.payment_method == 'CASH' %}badge-soft-sage{% elif r.payment_method == 'CARD' %}badge-soft-navy{% else %}badge-soft-terracotta{% endif %}">
+              {{ r.payment_method }}
+            </span>
+          </td>
+          <td class="text-end">
+            <a href="{{ url_for('pos.view_invoice', invoice_no=r.invoice_no) }}" class="btn btn-sm btn-outline-secondary py-1 px-2">
+              <i class="bi bi-receipt"></i>
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="11" class="text-center py-5 text-muted">No invoices found for the specified criteria.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      {% if rows %}
+      <tfoot class="border-top-2 border-dark table-light fw-bold font-monospace">
+        <tr>
+          <td colspan="5">LEDGER TOTALS:</td>
+          <td></td>
+          <td class="text-end text-danger">-{{ totals.total_discount | currency }}</td>
+          <td class="text-end text-muted">{{ totals.total_tax | currency }}</td>
+          <td class="text-end text-success">{{ totals.total_revenue | currency }}</td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+{% endblock %}

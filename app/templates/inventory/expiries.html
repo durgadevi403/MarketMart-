@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Expiry Monitoring{% endblock %}
+{% block header_title %}Grocery Expiry Monitoring & Alerts{% endblock %}
+
+{% block content %}
+<div class="card-retail mb-4">
+  <div class="card-retail-body py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h6 class="fw-bold mb-1" style="color: var(--sidebar-navy);">Perishable Goods Expiry Watch</h6>
+      <p class="text-muted small mb-0">Monitors products expiring within the next 30 days or already past date.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('reports.expiry', export='csv') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-download me-1"></i> Export Expiry CSV
+      </a>
+      <a href="{{ url_for('inventory.index') }}" class="btn btn-sm btn-navy">
+        <i class="bi bi-stack me-1"></i> Stock Control
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="card-retail">
+  <div class="card-retail-header">
+    <div class="d-flex align-items-center gap-2">
+      <h5>Expiry Alert Items</h5>
+      <span class="badge badge-soft-danger">{{ alerts|length }} products</span>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-retail align-middle">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Product Name</th>
+          <th>Category</th>
+          <th class="text-center">Remaining Stock</th>
+          <th class="text-end">Retail Value at Risk</th>
+          <th>Expiry Date</th>
+          <th>Status</th>
+          <th>Supplier</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in alerts %}
+        <tr>
+          <td><span class="font-monospace small text-muted">{{ a.sku }}</span></td>
+          <td><span class="fw-semibold text-dark">{{ a.name }}</span></td>
+          <td><span class="badge badge-soft-navy">{{ a.category }}</span></td>
+          <td class="text-center fw-bold">{{ a.quantity }} units</td>
+          <td class="text-end font-monospace text-danger fw-bold">{{ (a.quantity * a.selling_price) | currency }}</td>
+          <td><span class="font-monospace fw-semibold">{{ a.expiry_date | date_format }}</span></td>
+          <td>
+            <span class="badge {{ a.badge_class }}">
+              {{ a.expiry_label }}
+            </span>
+          </td>
+          <td class="small text-muted">{{ a.supplier_name or 'None' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center py-5 text-muted">
+            <i class="bi bi-check2-circle text-success display-6 d-block mb-2"></i>
+            No expiring or expired items found in the inventory!
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

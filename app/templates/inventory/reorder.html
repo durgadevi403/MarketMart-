@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Reorder Recommendations{% endblock %}
+{% block header_title %}Inventory Reorder Recommendations{% endblock %}
+
+{% block content %}
+<div class="card-retail mb-4">
+  <div class="card-retail-body py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h6 class="fw-bold mb-1" style="color: var(--sidebar-navy);">Low Stock Reorder List</h6>
+      <p class="text-muted small mb-0">Products whose stock has fallen below the safety minimum reorder threshold.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('reports.low_stock', export='csv') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-download me-1"></i> Export Reorder CSV
+      </a>
+      <a href="{{ url_for('inventory.index') }}" class="btn btn-sm btn-navy">
+        <i class="bi bi-stack me-1"></i> Stock Overview
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="card-retail">
+  <div class="card-retail-header">
+    <div class="d-flex align-items-center gap-2">
+      <h5>Items Requiring Reorder</h5>
+      <span class="badge badge-soft-warning">{{ items|length }} products</span>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-retail align-middle">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Product Name</th>
+          <th>Category</th>
+          <th class="text-center">Current</th>
+          <th class="text-center">Min Level</th>
+          <th class="text-center">Recommended Order</th>
+          <th class="text-end">Est. Unit Cost</th>
+          <th class="text-end">Est. Order Total</th>
+          <th>Supplier & Contact</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td><span class="font-monospace small text-muted">{{ item.sku }}</span></td>
+          <td><span class="fw-semibold text-dark">{{ item.name }}</span></td>
+          <td><span class="badge badge-soft-navy">{{ item.category }}</span></td>
+          <td class="text-center">
+            <span class="badge {% if item.quantity == 0 %}badge-soft-danger{% else %}badge-soft-warning{% endif %}">
+              {{ item.quantity }} units
+            </span>
+          </td>
+          <td class="text-center text-muted small">{{ item.min_stock_level }}</td>
+          <td class="text-center">
+            <span class="fw-bold text-primary font-monospace">+{{ item.recommended_reorder }} units</span>
+          </td>
+          <td class="text-end font-monospace">{{ item.cost_price | currency }}</td>
+          <td class="text-end font-monospace fw-bold text-dark">{{ item.estimated_reorder_cost | currency }}</td>
+          <td>
+            <div class="fw-semibold text-dark">{{ item.supplier_name or 'Unassigned' }}</div>
+            {% if item.supplier_phone %}
+              <div class="small text-muted"><i class="bi bi-telephone me-1"></i>{{ item.supplier_phone }}</div>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="9" class="text-center py-5 text-muted">
+            <i class="bi bi-check-circle-fill text-success display-6 d-block mb-2"></i>
+            No products are currently below their minimum safety stock level.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

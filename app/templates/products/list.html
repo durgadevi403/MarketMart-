@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Products Catalog{% endblock %}
+{% block header_title %}Grocery Products Catalog{% endblock %}
+
+{% block content %}
+<div class="card-retail mb-4">
+  <div class="card-retail-body py-3">
+    <form method="GET" action="{{ url_for('products.index') }}" class="row g-2 align-items-center">
+      <div class="col-md-3">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" name="search" class="form-control" placeholder="Search by name or SKU..." value="{{ selected_search or '' }}">
+        </div>
+      </div>
+
+      <div class="col-md-2">
+        <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="All">All Categories</option>
+          {% for cat in categories %}
+            <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <select name="supplier_id" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="All">All Suppliers</option>
+          {% for s in suppliers %}
+            <option value="{{ s.id }}" {% if selected_supplier|string == s.id|string %}selected{% endif %}>{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <select name="stock_status" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Stock Status</option>
+          <option value="in_stock" {% if selected_status == 'in_stock' %}selected{% endif %}>In Stock</option>
+          <option value="low_stock" {% if selected_status == 'low_stock' %}selected{% endif %}>Low Stock</option>
+          <option value="out_of_stock" {% if selected_status == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+          <option value="expiring_soon" {% if selected_status == 'expiring_soon' %}selected{% endif %}>Expiring Soon</option>
+          <option value="expired" {% if selected_status == 'expired' %}selected{% endif %}>Expired</option>
+        </select>
+      </div>
+
+      <div class="col-md-3 text-end d-flex gap-2 justify-content-end">
+        <button type="submit" class="btn btn-sm btn-navy px-3">Filter</button>
+        {% if selected_search or selected_category != 'All' or selected_supplier != 'All' or selected_status %}
+          <a href="{{ url_for('products.index') }}" class="btn btn-sm btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+        {% endif %}
+        {% if session.get('user_role') == 'ADMIN' %}
+          <a href="{{ url_for('products.create') }}" class="btn btn-sm btn-terracotta d-inline-flex align-items-center gap-1">
+            <i class="bi bi-plus-lg"></i> Add Product
+          </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card-retail">
+  <div class="card-retail-header">
+    <div class="d-flex align-items-center gap-2">
+      <h5>Products List</h5>
+      <span class="badge badge-soft-navy">{{ products|length }} items</span>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-retail align-middle">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Product Name</th>
+          <th>Category</th>
+          <th class="text-end">Cost</th>
+          <th class="text-end">Selling</th>
+          <th class="text-center">Stock</th>
+          <th>Status</th>
+          <th>Expiry</th>
+          <th>Supplier</th>
+          {% if session.get('user_role') == 'ADMIN' %}
+          <th class="text-end">Actions</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td><span class="fw-semibold font-monospace text-secondary" style="font-size: 0.8rem;">{{ p.sku }}</span></td>
+          <td>
+            <div class="fw-semibold text-dark">{{ p.name }}</div>
+            {% if p.description %}
+              <div class="text-muted small text-truncate" style="max-width: 250px;">{{ p.description }}</div>
+            {% endif %}
+          </td>
+          <td><span class="badge badge-soft-navy">{{ p.category }}</span></td>
+          <td class="text-end font-monospace">{{ p.cost_price | currency }}</td>
+          <td class="text-end font-monospace fw-bold text-dark">{{ p.selling_price | currency }}</td>
+          <td class="text-center">
+            <span class="fw-bold {% if p.quantity == 0 %}text-danger{% elif p.quantity <= p.min_stock_level %}text-warning-emphasis{% else %}text-success{% endif %}">
+              {{ p.quantity }}
+            </span>
+            <span class="text-muted small">/ min {{ p.min_stock_level }}</span>
+          </td>
+          <td>
+            <span class="badge {{ p.badge_class }}">{{ p.label }}</span>
+          </td>
+          <td class="small {% if p.is_expired %}text-danger fw-bold{% elif p.is_expiring %}text-warning fw-semibold{% else %}text-muted{% endif %}">
+            {{ p.expiry_date | date_format }}
+          </td>
+          <td class="small text-muted">{{ p.supplier_name or '-' }}</td>
+          {% if session.get('user_role') == 'ADMIN' %}
+          <td class="text-end">
+            <div class="d-inline-flex gap-1">
+              <a href="{{ url_for('products.edit', product_id=p.id) }}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Edit">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="POST" action="{{ url_for('products.delete', product_id=p.id) }}" onsubmit="return confirm('Are you sure you want to delete this product?');" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" title="Delete">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" class="text-center py-5 text-muted">
+            <i class="bi bi-box-seam display-6 d-block mb-2"></i>
+            No products found matching the criteria.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
